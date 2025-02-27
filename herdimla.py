@@ -217,12 +217,12 @@ def meal_management(user_id):
     # Add a small arrow button at the top-left corner
     back_button = tk.Label(mealBoard, text="←", font=("Arial", 10), bg="#f0f0f0", fg="black", cursor="hand2")
     back_button.place(x=10, y=10)  # Position at the top-left corner
-    back_button.bind("<Button-1>", lambda e: [mealBoard.destroy(), admin_dashboard()]) 
+    back_button.bind("<Button-1>", lambda e: [mealBoard.destroy(), admin_dashboard(user_id)]) 
 
     welcome_label = tk.Label(mealBoard, text="Weekly Meal Plan", font=("Arial", 24, "bold"), bg="#F0F0F0", fg="black")
     welcome_label.pack(pady=20)
 
-    conn = sqlite3.connect("new.d")
+    conn = sqlite3.connect("new.db")
     cursor = conn.cursor()
     cursor.execute("SELECT id, day, breakfast, meal, lunch, dinner FROM meal WHERE user_id = ?", (user_id,))
     meals = cursor.fetchall()
@@ -331,7 +331,7 @@ def students(user_id):
         # Fetch and filter students based on search term
         conn = sqlite3.connect("new.db")
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM student")
+        cursor.execute("SELECT id,name, dob, address, email, number, parent_name, parent_number, entry_date, paid_till, room_number FROM student")
         students = cursor.fetchall()
         conn.close()
 
