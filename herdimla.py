@@ -214,9 +214,9 @@ def meal_management(user_id):
     mealBoard.iconbitmap("abc.ico")
     mealBoard.attributes('-fullscreen', True)
 
-    # Add a small arrow button at the top-left corner
+
     back_button = tk.Label(mealBoard, text="←", font=("Arial", 10), bg="#f0f0f0", fg="black", cursor="hand2")
-    back_button.place(x=10, y=10)  # Position at the top-left corner
+    back_button.place(x=10, y=10)  
     back_button.bind("<Button-1>", lambda e: [mealBoard.destroy(), admin_dashboard(user_id)]) 
 
     welcome_label = tk.Label(mealBoard, text="Weekly Meal Plan", font=("Arial", 24, "bold"), bg="#F0F0F0", fg="black")
@@ -268,21 +268,24 @@ def students(user_id):
     students_win.iconbitmap("abc.ico")
     students_win.attributes('-fullscreen', True)
 
-    back_button = tk.Label(students_win, text="←", font=("Arial", 10), bg="#f0f0f0", fg="black", cursor="hand2")
+    back_button = tk.Label(students_win, text="←", font=("Arial", 10), bg="#f0f0f0", 
+    fg="black", cursor="hand2")
     back_button.place(x=10, y=10)
     back_button.bind("<Button-1>", lambda e: [students_win.destroy(), admin_dashboard(user_id)])
 
-    welcome_label = tk.Label(students_win, text="Students Details", font=("Arial", 24, "bold"), bg="#F0F0F0", fg="black")
+    welcome_label = tk.Label(students_win, text="Students Details", font=("Arial", 24, "bold"), 
+    bg="#F0F0F0", fg="black")
     welcome_label.pack(pady=20)
-        # Create a frame for the search bar
+        
     search_frame = tk.Frame(students_win, bg="#f0f0f0")
     search_frame.pack(fill="x", padx=20, pady=10)
 
-    # Search bar
+    
     tk.Label(search_frame, text="Search:", font=("Arial", 12), bg="#f0f0f0").pack(side="left", padx=5)
     search_entry = tk.Entry(search_frame, font=("Arial", 12), width=30)
     search_entry.pack(side="left", padx=5)
-    search_button = tk.Button(search_frame, text="Search", font=("Arial", 12), bg="#4CAF50", fg="white", command=lambda: search_students())
+    search_button = tk.Button(search_frame, text="Search", font=("Arial", 12), bg="#4CAF50",
+    fg="white", command=lambda: search_students())
     search_button.pack(side="left", padx=5)
 
     table_frame = tk.Frame(students_win, bg="#f0f0f0")
@@ -317,33 +320,27 @@ def students(user_id):
         for student in students:
             tree.insert("", "end", values=student)
     
-    # Function to search students
     def search_students():
         search_term = search_entry.get().strip().lower()
         if not search_term:
-            load_students()  # Reload all students if search term is empty
+            load_students()  
             return
 
-        # Clear existing data in the table
         for row in tree.get_children():
             tree.delete(row)
 
-        # Fetch and filter students based on search term
         conn = sqlite3.connect("new.db")
         cursor = conn.cursor()
-        cursor.execute("SELECT id,name, dob, address, email, number, parent_name, parent_number, entry_date, paid_till, room_number FROM student WHERE user_id=?",(user_id))
+        cursor.execute("SELECT id,name, dob, address, email, number, parent_name, parent_number,entry_date, paid_till, room_number FROM student WHERE name LIKE ? AND user_id=?",(search_term,user_id))
         students = cursor.fetchall()
         conn.close()
 
-        # Insert filtered data into the table
         for student in students:
-            if any(search_term in str(field).lower() for field in student):  # Search across all fields
-                tree.insert("", "end", values=student, tags=("highlight",))  # Highlight matching rows
+         
+            tree.insert("", "end", values=student, tags=("highlight",)) 
 
-        # Configure tag for highlighting
-        tree.tag_configure("highlight", background="yellow")
+            tree.tag_configure("highlight", background="yellow")
 
-    # Load student data into the table
     load_students()
 
     def edit_student():
@@ -361,7 +358,8 @@ def students(user_id):
         entries = {}
         labels = ["ID", "Name", "DOB", "Address", "Email", "Phone", "Parent Name", "Parent Phone", "Entry Date", "Paid Till", "Room Number"]
         for i, label in enumerate(labels):
-            tk.Label(edit_win, text=label, font=("Arial", 12), bg="#F0F0F0").grid(row=i, column=0, padx=10, pady=5, sticky="w")
+            tk.Label(edit_win, text=label, 
+            font=("Arial", 12), bg="#F0F0F0").grid(row=i, column=0, padx=10, pady=5, sticky="w")
             entry = tk.Entry(edit_win, font=("Arial", 12))
             entry.grid(row=i, column=1, padx=10, pady=5, sticky="w")
             entry.insert(0, student_data[i])
@@ -373,30 +371,28 @@ def students(user_id):
             cursor = conn.cursor()
             cursor.execute("""
                 UPDATE student 
-                SET name=?, dob=?, address=?, email=?, number=?, parent_name=?, parent_number=?, entry_date=?, paid_till=?, room_number=?
-                WHERE id=? AND user_id=?
-            """, (*updated_data[1:], updated_data[0], user_id))
+                SET name=?, dob=?, address=?, email=?, number=?, parent_name=?, parent_number=?, 
+                entry_date=?, paid_till=?, room_number=? WHERE id=? AND user_id=?""", 
+                (*updated_data[1:], updated_data[0], user_id))
             conn.commit()
             conn.close()
             messagebox.showinfo("Success", "Student record updated successfully!")
             edit_win.destroy()
             load_students()
 
-        tk.Button(edit_win, text="Save", font=("Arial", 14), bg="#4CAF50", fg="white", command=save_edit).grid(row=len(labels), column=0, columnspan=2, pady=10)
+        tk.Button(edit_win, text="Save", font=("Arial", 14), bg="#4CAF50", 
+        fg="white", command=save_edit).grid(row=len(labels), column=0, columnspan=2, pady=10)
 
     def remove_student():
         selected_item = tree.selection()
         if not selected_item:
             messagebox.showerror("Error", "Please select a student to remove!")
             return
-
         student_id = tree.item(selected_item, "values")[0]
         room_number = tree.item(selected_item, "values")[10]
-
         confirm = messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this student?")
         if not confirm:
             return
-
         conn = sqlite3.connect("new.db")
         cursor = conn.cursor()
         cursor.execute("DELETE FROM student WHERE id = ? AND user_id = ?", (student_id, user_id))
@@ -406,12 +402,13 @@ def students(user_id):
         conn.close()
         tree.delete(selected_item)
         messagebox.showinfo("Success", "Student removed successfully!")
-
     load_students()
     button_frame = tk.Frame(students_win, bg="#f0f0f0")
     button_frame.pack(pady=10)
-    tk.Button(button_frame, text="Edit Selected Student", font=("Arial", 14), bg="#4CAF50", fg="white", command=edit_student).pack(side="left", padx=10)
-    tk.Button(button_frame, text="Remove Selected Student", font=("Arial", 14), bg="#FF0000", fg="white", command=remove_student).pack(side="left", padx=10)
+    tk.Button(button_frame, text="Edit Selected Student", font=("Arial", 14), bg="#4CAF50",
+     fg="white", command=edit_student).pack(side="left", padx=10)
+    tk.Button(button_frame, text="Remove Selected Student", font=("Arial", 14), bg="#FF0000",
+     fg="white", command=remove_student).pack(side="left", padx=10)
 
 def add_students(user_id):
     addStudent = tk.Toplevel()
@@ -421,14 +418,16 @@ def add_students(user_id):
     addStudent.iconbitmap("abc.ico")
     addStudent.attributes('-fullscreen', True)
 
-    back_button = tk.Label(addStudent, text="←", font=("Arial", 10), bg="#f0f0f0", fg="black", cursor="hand2")
+    back_button = tk.Label(addStudent, text="←", font=("Arial", 10), bg="#f0f0f0", 
+    fg="black", cursor="hand2")
     back_button.place(x=10, y=10)
     back_button.bind("<Button-1>", lambda e: [addStudent.destroy(), admin_dashboard(user_id)])
 
     def fetch_rooms():
         conn = sqlite3.connect("new.db")
         cursor = conn.cursor()
-        cursor.execute("SELECT id, room_no, capacity, occupied FROM room WHERE user_id = ? AND occupied < capacity", (user_id,))
+        cursor.execute('''SELECT id, room_no, capacity, occupied FROM room WHERE 
+                        user_id = ? AND occupied < capacity''', (user_id,))
         rooms_list = cursor.fetchall()
         conn.close()
         return rooms_list
@@ -455,10 +454,12 @@ def add_students(user_id):
         cursor = conn.cursor()
         try:
             cursor.execute("""
-                INSERT INTO student (user_id, name, dob, address, email, number, parent_name, parent_number, entry_date, paid_till, room_number)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (user_id, name, dob, address, email, number, parent_name, parent_number, entry_date, paid_till, room_number))
-            cursor.execute("UPDATE room SET occupied = occupied + 1 WHERE room_no = ? AND user_id = ?", (room_number, user_id))
+                INSERT INTO student (user_id, name, dob, address, email, number, parent_name, parent_number,
+                 entry_date, paid_till, room_number)VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", 
+                 (user_id, name, dob, address, email, number, parent_name,
+                  parent_number, entry_date, paid_till, room_number))
+            cursor.execute("UPDATE room SET occupied = occupied + 1 WHERE room_no = ? AND user_id = ?", 
+            (room_number, user_id))
             conn.commit()
             messagebox.showinfo("Success", "Student added successfully!")
             addStudent.destroy()
@@ -470,23 +471,21 @@ def add_students(user_id):
             conn.close()
 
     tk.Label(addStudent, text="Add Student", font=("Arial", 24, "bold"), bg="#F0F0F0").pack(pady=20)
-
-    labels = ["Name", "Date of Birth (YYYY-MM-DD)", "Address", "Email", "Phone Number",
-              "Parent Name", "Parent Number", "Entry Date (YYYY-MM-DD)", "Paid Till (YYYY-MM-DD)"]
+    labels = ["Name", "Date of Birth (YYYY-MM-DD)", "Address", "Email", "Phone Number","Parent Name", "Parent Number", "Entry Date (YYYY-MM-DD)", "Paid Till (YYYY-MM-DD)"]
     entries = {}
     for label in labels:
         tk.Label(addStudent, text=label, font=("Arial", 12), bg="#F0F0F0").pack()
         entry = tk.Entry(addStudent, font=("Arial", 12))
         entry.pack(pady=2)
         entries[label] = entry
-
     tk.Label(addStudent, text="Select Room", font=("Arial", 12), bg="#F0F0F0").pack()
     rooms = fetch_rooms()
     room_var = tk.StringVar()
-    room_dropdown = ttk.Combobox(addStudent, textvariable=room_var, values=[f"Room {r[1]}" for r in rooms], state="readonly")
+    room_dropdown = ttk.Combobox(addStudent, textvariable=room_var, values=[f"Room {r[1]}" for r in rooms], 
+    state="readonly")
     room_dropdown.pack(pady=5)
-
-    tk.Button(addStudent, text="Submit", font=("Arial", 14), bg="#4CAF50", fg="white", command=submit).pack(pady=10)
+    tk.Button(addStudent, text="Submit", font=("Arial", 14), bg="#4CAF50", 
+    fg="white", command=submit).pack(pady=10)
 def room(user_id):
     room_win = tk.Toplevel()
     room_win.title("Room Details")
@@ -495,38 +494,37 @@ def room(user_id):
     room_win.iconbitmap("abc.ico")
     room_win.attributes('-fullscreen', True)
 
-    # Add a small arrow button at the top-left corner
-    back_button = tk.Label(room_win, text="←", font=("Arial", 10), bg="#f0f0f0", fg="black", cursor="hand2")
-    back_button.place(x=10, y=10)  # Position at the top-left corner
-    back_button.bind("<Button-1>", lambda e: [room_win.destroy(), admin_dashboard(user_id)])  # Pass user_id to admin_dashboard
+    back_button = tk.Label(room_win, text="←", font=("Arial", 10), 
+    bg="#f0f0f0", fg="black", cursor="hand2")
+    back_button.place(x=10, y=10)  
+    back_button.bind("<Button-1>", lambda e: [room_win.destroy(), admin_dashboard(user_id)]) 
 
-    # Welcome message
-    welcome_label = tk.Label(room_win, text="Room Details", font=("Arial", 24, "bold"), bg="#F0F0F0", fg="black")
+    welcome_label = tk.Label(room_win, text="Room Details", font=("Arial", 24, "bold"),
+     bg="#F0F0F0", fg="black")
     welcome_label.pack(pady=20)
 
-    # Create a frame for the table
     table_frame = tk.Frame(room_win, bg="#f0f0f0")
     table_frame.pack(fill="both", expand=True, padx=20, pady=10)
 
-    # Create a Treeview widget
+    
     columns = ("Room no", "Capacity", "Occupied", "Beds Left", "Students")
     tree = ttk.Treeview(table_frame, columns=columns, show="headings", selectmode="browse")
     tree.pack(fill="both", expand=True)
 
-    # Define column headings
+    
     for col in columns:
         tree.heading(col, text=col)
 
-    # Define column widths
+    
     tree.column("Room no", width=100)
     tree.column("Capacity", width=100)
     tree.column("Occupied", width=100)
     tree.column("Beds Left", width=100)
     tree.column("Students", width=300)
 
-    # Function to load room data into the table
+    
     def load_rooms():
-        conn = sqlite3.connect("new.db")  # Connect to the correct database
+        conn = sqlite3.connect("new.db")  
         cursor = conn.cursor()
 
         # Fetch room data
@@ -537,56 +535,45 @@ def room(user_id):
             room_no, capacity, occupied = room_data
             beds_left = capacity - occupied
 
-            # Fetch students in the room
+            
             cursor.execute("SELECT name FROM student WHERE room_number = ?", (room_no,))
             students = cursor.fetchall()
             student_names = ", ".join([student[0] for student in students])
-
-            # Insert data into the table
             tree.insert("", "end", values=(room_no, capacity, occupied, beds_left, student_names))
-
         conn.close()
-
-    # Load room data into the table
     load_rooms()
 
-    # Function to edit room details
     def edit_room():
         selected_item = tree.selection()
         if not selected_item:
             messagebox.showerror("Error", "Please select a room to edit!")
             return
 
-        # Get the selected room's data
         room_data = tree.item(selected_item, "values")
 
-        # Create a new window for editing
         edit_win = tk.Toplevel(room_win)
         edit_win.title("Edit Room Details")
         edit_win.geometry("400x300")
         edit_win.configure(bg="#f0f0f0")
         edit_win.iconbitmap("abc.ico") 
 
-        # Labels and entry fields for editing
         labels = ["Capacity", "Occupied"]
         entries = {}
 
         for i, label in enumerate(labels):
-            tk.Label(edit_win, text=label, font=("Arial", 12), bg="#F0F0F0").grid(row=i, column=0, padx=10, pady=5, sticky="w")
+            tk.Label(edit_win, text=label, font=("Arial", 12), 
+            bg="#F0F0F0").grid(row=i, column=0, padx=10, pady=5, sticky="w")
             entry = tk.Entry(edit_win, font=("Arial", 12))
             entry.grid(row=i, column=1, padx=10, pady=5, sticky="w")
-            entry.insert(0, room_data[i + 1])  # Pre-fill with existing data (skip room_no)
+            entry.insert(0, room_data[i + 1])  
             entries[label] = entry
 
-        # Function to save the edited room details
         def save_edit():
             updated_data = [entries[label].get() for label in labels]
-            room_no = room_data[0]  # Room no is not editable, used for WHERE clause
-
-            # Validate capacity and occupied values
+            room_no = room_data[0] 
             try:
-                capacity = int(updated_data[0])  # Capacity is the first entry
-                occupied = int(updated_data[1])  # Occupied is the second entry
+                capacity = int(updated_data[0])  
+                occupied = int(updated_data[1])  
                 if capacity < occupied:
                     messagebox.showerror("Error", "Capacity cannot be less than occupied beds!")
                     return
@@ -594,8 +581,8 @@ def room(user_id):
                 messagebox.showerror("Error", "Capacity and Occupied must be integers!")
                 return
 
-            # Update the room in the database
-            conn = sqlite3.connect("new.db")  # Connect to the correct database
+        
+            conn = sqlite3.connect("new.db") 
             cursor = conn.cursor()
             cursor.execute("""
                 UPDATE room 
@@ -607,15 +594,16 @@ def room(user_id):
 
             messagebox.showinfo("Success", "Room details updated successfully!")
             edit_win.destroy()
-            tree.delete(*tree.get_children())  # Clear the table
-            load_rooms()  # Reload the table with updated data
+            tree.delete(*tree.get_children())  
+            load_rooms()  
 
-        # Save button
-        save_button = tk.Button(edit_win, text="Save", font=("Arial", 14), bg="#4CAF50", fg="white", command=save_edit)
-        save_button.grid(row=len(labels) + 1, column=0, columnspan=2, pady=10)  # Place the button below the entries
+        
+        save_button = tk.Button(edit_win, text="Save", font=("Arial", 14), bg="#4CAF50", 
+        fg="white", command=save_edit)
+        save_button.grid(row=len(labels) + 1, column=0, columnspan=2, pady=10)  
 
-    # Edit button
-    edit_button = tk.Button(room_win, text="Edit Room", font=("Arial", 14), bg="#4CAF50", fg="white", command=edit_room)
+    edit_button = tk.Button(room_win, text="Edit Room", font=("Arial", 14), bg="#4CAF50", 
+    fg="white", command=edit_room)
     edit_button.pack(pady=10)
 
 
