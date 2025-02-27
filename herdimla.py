@@ -331,7 +331,7 @@ def students(user_id):
         # Fetch and filter students based on search term
         conn = sqlite3.connect("new.db")
         cursor = conn.cursor()
-        cursor.execute("SELECT id,name, dob, address, email, number, parent_name, parent_number, entry_date, paid_till, room_number FROM student")
+        cursor.execute("SELECT id,name, dob, address, email, number, parent_name, parent_number, entry_date, paid_till, room_number FROM student WHERE user_id=?",(user_id))
         students = cursor.fetchall()
         conn.close()
 
