@@ -3,7 +3,8 @@ from tkinter import messagebox
 from tkinter import ttk
 from PIL import Image, ImageTk
 import sqlite3
-
+import re
+from datetime import datetime
 
 def register_page(root):
     root.withdraw()
@@ -26,6 +27,11 @@ def register_page(root):
             return
         elif password != confirm_password:
             messagebox.showerror("Error", "Passwords do not match!")
+            return
+        # Email format validation
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, email):
+            messagebox.showerror("Error", "Invalid email format! Use: example@domain.com")
             return
         try:
             number_of_rooms = int(number_of_rooms)
@@ -214,7 +220,6 @@ def meal_management(user_id):
     mealBoard.iconbitmap("abc.ico")
     mealBoard.attributes('-fullscreen', True)
 
-
     back_button = tk.Label(mealBoard, text="←", font=("Arial", 10), bg="#f0f0f0", fg="black", cursor="hand2")
     back_button.place(x=10, y=10)  
     back_button.bind("<Button-1>", lambda e: [mealBoard.destroy(), admin_dashboard(user_id)]) 
@@ -280,7 +285,6 @@ def students(user_id):
     search_frame = tk.Frame(students_win, bg="#f0f0f0")
     search_frame.pack(fill="x", padx=20, pady=10)
 
-    
     tk.Label(search_frame, text="Search:", font=("Arial", 12), bg="#f0f0f0").pack(side="left", padx=5)
     search_entry = tk.Entry(search_frame, font=("Arial", 12), width=30)
     search_entry.pack(side="left", padx=5)
@@ -336,9 +340,7 @@ def students(user_id):
         conn.close()
 
         for student in students:
-         
             tree.insert("", "end", values=student, tags=("highlight",)) 
-
             tree.tag_configure("highlight", background="yellow")
 
     load_students()
@@ -402,6 +404,7 @@ def students(user_id):
         conn.close()
         tree.delete(selected_item)
         messagebox.showinfo("Success", "Student removed successfully!")
+    
     load_students()
     button_frame = tk.Frame(students_win, bg="#f0f0f0")
     button_frame.pack(pady=10)
@@ -448,6 +451,32 @@ def add_students(user_id):
             messagebox.showerror("Error", "Please fill in all fields!")
             return
 
+        # Validation for DOB, Entry Date, Paid Till (YYYY-MM-DD format)
+        date_pattern = r'^\d{4}-\d{2}-\d{2}$'
+        try:
+            for date_field, field_name in [(dob, "Date of Birth"), (entry_date, "Entry Date"), (paid_till, "Paid Till")]:
+                if not re.match(date_pattern, date_field) or not datetime.strptime(date_field, "%Y-%m-%d"):
+                    messagebox.showerror("Error", f"Invalid {field_name} format! Use YYYY-MM-DD (e.g., 2000-01-01)")
+                    return
+        except ValueError:
+            messagebox.showerror("Error", "Invalid date! Ensure dates are valid and in YYYY-MM-DD format.")
+            return
+
+        # Email format validation
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, email):
+            messagebox.showerror("Error", "Invalid email format! Use: example@domain.com")
+            return
+
+        # Phone number and parent phone number validation (10 digits)
+        phone_pattern = r'^\d{10}$'
+        if not re.match(phone_pattern, number):
+            messagebox.showerror("Error", "Invalid phone number! Must be 10 digits (e.g., 1234567890)")
+            return
+        if not re.match(phone_pattern, parent_number):
+            messagebox.showerror("Error", "Invalid parent phone number! Must be 10 digits (e.g., 1234567890)")
+            return
+
         room_number = int(selected_room.split()[1])
 
         conn = sqlite3.connect("new.db")
@@ -486,6 +515,7 @@ def add_students(user_id):
     room_dropdown.pack(pady=5)
     tk.Button(addStudent, text="Submit", font=("Arial", 14), bg="#4CAF50", 
     fg="white", command=submit).pack(pady=10)
+
 def room(user_id):
     room_win = tk.Toplevel()
     room_win.title("Room Details")
@@ -506,23 +536,19 @@ def room(user_id):
     table_frame = tk.Frame(room_win, bg="#f0f0f0")
     table_frame.pack(fill="both", expand=True, padx=20, pady=10)
 
-    
     columns = ("Room no", "Capacity", "Occupied", "Beds Left", "Students")
     tree = ttk.Treeview(table_frame, columns=columns, show="headings", selectmode="browse")
     tree.pack(fill="both", expand=True)
 
-    
     for col in columns:
         tree.heading(col, text=col)
 
-    
     tree.column("Room no", width=100)
     tree.column("Capacity", width=100)
     tree.column("Occupied", width=100)
     tree.column("Beds Left", width=100)
     tree.column("Students", width=300)
 
-    
     def load_rooms():
         conn = sqlite3.connect("new.db")  
         cursor = conn.cursor()
@@ -535,12 +561,12 @@ def room(user_id):
             room_no, capacity, occupied = room_data
             beds_left = capacity - occupied
 
-            
             cursor.execute("SELECT name FROM student WHERE room_number = ?", (room_no,))
             students = cursor.fetchall()
             student_names = ", ".join([student[0] for student in students])
             tree.insert("", "end", values=(room_no, capacity, occupied, beds_left, student_names))
         conn.close()
+    
     load_rooms()
 
     def edit_room():
@@ -581,7 +607,6 @@ def room(user_id):
                 messagebox.showerror("Error", "Capacity and Occupied must be integers!")
                 return
 
-        
             conn = sqlite3.connect("new.db") 
             cursor = conn.cursor()
             cursor.execute("""
@@ -597,7 +622,6 @@ def room(user_id):
             tree.delete(*tree.get_children())  
             load_rooms()  
 
-        
         save_button = tk.Button(edit_win, text="Save", font=("Arial", 14), bg="#4CAF50", 
         fg="white", command=save_edit)
         save_button.grid(row=len(labels) + 1, column=0, columnspan=2, pady=10)  
@@ -606,10 +630,8 @@ def room(user_id):
     fg="white", command=edit_room)
     edit_button.pack(pady=10)
 
-
 if __name__ == "__main__":
     root = tk.Tk()
     root.iconbitmap("abc.ico")
     login_page(root)
     root.mainloop()
-
