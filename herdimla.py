@@ -153,6 +153,7 @@ def login_page(root):
         conn.close()
 
         if user:
+            messagebox.showinfo("Success", "Logged in successfully!")  # Added login messagebox
             login_win.destroy()
             admin_dashboard(user[0])  # Pass user_id to dashboard
         else:
@@ -206,11 +207,90 @@ def admin_dashboard(user_id):
     fee_button.grid(row=1, column=1, padx=50, pady=20, sticky="ne")
 
     room_button = tk.Button(button_frame, text="Room Details", command=lambda: [dashboard.destroy(), room(user_id)], bg="#4CAF50", fg="white", font=("Arial", 14), width=button_width, height=button_height)
-    room_button.grid(row=2, column=1, padx=50, pady=20, sticky="ne")  # Added padx for spacing
+    room_button.grid(row=2, column=1, padx=50, pady=20, sticky="ne")
 
-    # Logout button (bottom right corner, below Room Details)
-    logout_button = tk.Button(button_frame, text="Logout", command=lambda: [dashboard.destroy(), login_page(root)], bg="#FF0000", fg="white", font=("Arial", 14), width=button_width, height=button_height)
-    logout_button.grid(row=3, column=1, padx=50, pady=20, sticky="se")  # Added padx for spacing
+    # New Edit Profile Button
+    edit_profile_button = tk.Button(button_frame, text="Edit Profile", command=lambda: [dashboard.destroy(), edit_user_profile(user_id)], bg="#4CAF50", fg="white", font=("Arial", 14), width=button_width, height=button_height)
+    edit_profile_button.grid(row=3, column=0, padx=50, pady=20, sticky="sw")
+
+    # Logout button with messagebox
+    logout_button = tk.Button(button_frame, text="Logout", command=lambda: [messagebox.showinfo("Logout", "Logged out successfully!"), dashboard.destroy(), login_page(root)], bg="#FF0000", fg="white", font=("Arial", 14), width=button_width, height=button_height)
+    logout_button.grid(row=3, column=1, padx=50, pady=20, sticky="se")
+
+def edit_user_profile(user_id):
+    profile_win = tk.Toplevel()
+    profile_win.title("Edit Profile")
+    profile_win.geometry("400x500")
+    profile_win.configure(bg="#f0f0f0")
+    profile_win.iconbitmap("abc.ico")
+
+    back_button = tk.Label(profile_win, text="←", font=("Arial", 10), bg="#f0f0f0", fg="black", cursor="hand2")
+    back_button.place(x=10, y=10)
+    back_button.bind("<Button-1>", lambda e: [profile_win.destroy(), admin_dashboard(user_id)])
+
+    tk.Label(profile_win, text="Edit Profile", font=("Arial", 24, "bold"), bg="#F0F0F0").pack(pady=20)
+
+    # Fetch current user details
+    conn = sqlite3.connect("new.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT first_name, last_name, email, password, number_of_rooms FROM users WHERE id = ?", (user_id,))
+    user_data = cursor.fetchone()
+    conn.close()
+
+    labels = ["First Name", "Last Name", "Email", "Password", "Number of Rooms"]
+    entries = {}
+
+    for i, label in enumerate(labels):
+        tk.Label(profile_win, text=label, font=("Arial", 12), bg="#F0F0F0").pack(pady=5)
+        entry = tk.Entry(profile_win, font=("Arial", 12))
+        entry.pack(pady=2)
+        entry.insert(0, user_data[i])
+        entries[label] = entry
+
+    def save_profile():
+        first_name = entries["First Name"].get()
+        last_name = entries["Last Name"].get()
+        email = entries["Email"].get()
+        password = entries["Password"].get()
+        number_of_rooms = entries["Number of Rooms"].get()
+
+        if not all([first_name, last_name, email, password, number_of_rooms]):
+            messagebox.showerror("Error", "All fields are required!")
+            return
+
+        # Email format validation
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, email):
+            messagebox.showerror("Error", "Invalid email format! Use: example@domain.com")
+            return
+
+        # Number of rooms validation
+        try:
+            number_of_rooms = int(number_of_rooms)
+            if number_of_rooms <= 0:
+                raise ValueError
+        except ValueError:
+            messagebox.showerror("Error", "Number of rooms must be a positive integer!")
+            return
+
+        conn = sqlite3.connect("new.db")
+        cursor = conn.cursor()
+        try:
+            cursor.execute("""
+                UPDATE users 
+                SET first_name = ?, last_name = ?, email = ?, password = ?, number_of_rooms = ?
+                WHERE id = ?
+            """, (first_name, last_name, email, password, number_of_rooms, user_id))
+            conn.commit()
+            messagebox.showinfo("Success", "Profile updated successfully!")
+            profile_win.destroy()
+            admin_dashboard(user_id)
+        except sqlite3.IntegrityError:
+            messagebox.showerror("Error", "Email already exists!")
+        finally:
+            conn.close()
+
+    tk.Button(profile_win, text="Save Changes", font=("Arial", 14), bg="#4CAF50", fg="white", command=save_profile).pack(pady=20)
 
 def meal_management(user_id):
     mealBoard = tk.Toplevel()
