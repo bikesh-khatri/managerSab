@@ -715,3 +715,11 @@ if __name__ == "__main__":
     root.iconbitmap("abc.ico")
     login_page(root)
     root.mainloop()
+
+    
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    root.iconbitmap("abc.ico")
+    login_page(root)
+    root.mainloop()
